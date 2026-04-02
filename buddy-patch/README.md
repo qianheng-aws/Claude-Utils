@@ -68,24 +68,6 @@ buddy is unavailable on this configuration
 </tr>
 </table>
 
-## How it works / 工作原理
-
-<table>
-<tr><td><b>English</b></td><td><b>中文</b></td></tr>
-<tr>
-<td>
-
-The script auto-detects the minified gate function by its unique structure (regex-based, no hardcoded names), then applies two same-length byte patches so the broken check is bypassed — condition always false, guard skipped. On macOS ARM64 the binary is re-signed with an ad-hoc signature (required by the kernel).
-
-</td>
-<td>
-
-脚本通过正则匹配自动定位混淆后的门控函数（无需硬编码函数名），然后应用两个等长字节补丁绕过失效的检查 —— 条件恒为 false，跳过守卫。在 macOS ARM64 上会重新进行 ad-hoc 签名（内核要求）。
-
-</td>
-</tr>
-</table>
-
 ## Usage / 使用方法
 
 ```bash
@@ -108,27 +90,6 @@ After patching, restart Claude Code and run `/buddy` to hatch your companion.
 | `/buddy pet` | Pet your companion / 抚摸你的宠物 |
 | `/buddy off` | Mute the companion / 静音宠物 |
 | `/buddy on` | Unmute the companion / 取消静音 |
-
-## After Claude Code updates / Claude Code 更新后
-
-Updates overwrite the binary — re-run the script. Automate with a session hook:
-
-更新会覆盖二进制文件 —— 需重新运行脚本。可通过 hook 自动化：
-
-```json
-// ~/.claude/settings.json
-{
-  "hooks": {
-    "onSessionStart": [{
-      "command": "python3 /path/to/patch-buddy.py 2>/dev/null || true"
-    }]
-  }
-}
-```
-
-The script is idempotent — exits immediately if already patched.
-
-脚本是幂等的 —— 已补丁时会立即退出。
 
 ## Compatibility / 兼容性
 
