@@ -7,9 +7,9 @@
   <img src="https://img.shields.io/badge/Linux-x86__64-FCC624.svg?logo=linux&logoColor=black" alt="Linux x86_64">
 </p>
 
-> Fix `/buddy` broken in Claude Code **v2.1.90** — the companion pet is unavailable for all users, not just specific providers.
+> Enable the `/buddy` companion pet in Claude Code for **any provider** (Bedrock, Vertex, etc.) and fix it being **broken for everyone in v2.1.90**.
 >
-> 修复 Claude Code **v2.1.90** 中 `/buddy` 功能失效的问题 —— 该版本下所有用户均无法使用伴生宠物，而非仅限特定 Provider。
+> 为**任意 Provider**（Bedrock、Vertex 等）启用 Claude Code 的 `/buddy` 伴生宠物，并修复 **v2.1.90 中所有用户均无法使用**的问题。
 
 ---
 
@@ -39,13 +39,12 @@ Claude Code v2.1.x ships with a hidden companion pet system. Run `/buddy` and yo
 - Reacts to events — errors, large diffs, test failures pop speech bubbles
 - Responds when you mention its name in conversation
 
-In v2.1.90, the `isBuddyLive()` function is broken — it returns `false` for **all** users, so everyone sees:
+There are **two problems** that prevent you from using it:
 
-```
-buddy is unavailable on this configuration
-```
+1. **Provider lock** — `/buddy` is gated to `firstParty` (direct API) users only. Bedrock, Vertex, and other provider users see "buddy is unavailable on this configuration". This is by design.
+2. **v2.1.90 regression** — a bug in v2.1.90 causes the feature gate to return `false` for **all** users, including firstParty.
 
-This script fixes that.
+This script fixes both.
 
 </td>
 <td>
@@ -56,13 +55,12 @@ Claude Code v2.1.x 内置了一个隐藏的伴生宠物系统。运行 `/buddy` 
 - 事件反应 —— 报错、大段 diff、测试失败时弹出对话气泡
 - 在对话中提到它的名字时会回应
 
-在 v2.1.90 中，`isBuddyLive()` 函数存在问题 —— 对**所有**用户都返回 `false`，因此所有人都会看到：
+有**两个问题**阻止你使用该功能：
 
-```
-buddy is unavailable on this configuration
-```
+1. **Provider 锁定** —— `/buddy` 仅对 `firstParty`（直连 API）用户开放，Bedrock、Vertex 等其他 Provider 用户会看到 "buddy is unavailable on this configuration"。这是官方有意为之。
+2. **v2.1.90 回归 Bug** —— v2.1.90 中的一个 bug 导致功能门控对**所有**用户（包括 firstParty）都返回 `false`。
 
-本脚本解决这个问题。
+本脚本同时修复这两个问题。
 
 </td>
 </tr>
