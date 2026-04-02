@@ -22,7 +22,7 @@
 
 ## Tools / 工具
 
-### [`buddy-patch`](./buddy-patch/) — Unlock `/buddy` on Any Provider / 任意 Provider 解锁 `/buddy`
+### [`buddy-patch`](./buddy-patch/) — Fix `/buddy` Broken in v2.1.90 / 修复 v2.1.90 中 `/buddy` 失效
 
 <p align="center">
   <img src="./buddy-patch/resources/buddy-idle.png" width="200" alt="Wild CAPYBARA appeared!">
@@ -39,16 +39,16 @@
 <tr>
 <td>
 
-Claude Code ships with a companion pet system (`/buddy`) — an ASCII critter that sits beside your input, animates, and reacts to your conversation. But it's gated to `firstParty` (direct API) users only.
+Claude Code ships with a companion pet system (`/buddy`) — an ASCII critter that sits beside your input, animates, and reacts to your conversation. In v2.1.90, the `isBuddyLive()` function is broken and returns `false` for **all** users.
 
-This script patches the binary so **Bedrock, Vertex, and other provider users** can use it too.
+This script patches the binary to fix it.
 
 </td>
 <td>
 
-Claude Code 内置了一个伴生宠物系统（`/buddy`）—— 一个会在输入框旁边动来动去、对你的对话做出反应的 ASCII 小生物。但该功能仅限 `firstParty`（直连 API）用户使用。
+Claude Code 内置了一个伴生宠物系统（`/buddy`）—— 一个会在输入框旁边动来动去、对你的对话做出反应的 ASCII 小生物。在 v2.1.90 中，`isBuddyLive()` 函数存在问题，对**所有**用户都返回 `false`。
 
-本脚本通过补丁使 **Bedrock、Vertex 及其他 Provider 用户**也能使用该功能。
+本脚本通过补丁修复该问题。
 
 </td>
 </tr>

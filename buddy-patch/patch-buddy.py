@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-Patch Claude Code binary to enable /buddy on non-firstParty providers (Bedrock, Vertex, etc.)
+Patch Claude Code binary to fix /buddy broken in v2.1.90.
 
 How it works:
-  The compiled binary contains isBuddyLive() which gates the buddy feature:
+  The compiled binary contains isBuddyLive() which gates the buddy feature.
+  In v2.1.90 this function returns false for ALL users — not just non-firstParty
+  providers — so everyone sees "buddy is unavailable on this configuration":
 
     function isBuddyLive() {
-      if (getProvider() !== "firstParty") return false;  // blocks Bedrock/Vertex
+      if (getProvider() !== "firstParty") return false;
       if (isSimpleMode()) return false;
-      return date >= April 2026;
+      return date >= April 2026;  // <-- broken in v2.1.90
     }
 
   And the /buddy command checks it:
@@ -16,8 +18,8 @@ How it works:
     if (!isBuddyLive()) return onDone("buddy is unavailable on this configuration"), null;
 
   We auto-detect the minified function name via regex, then apply two same-length patches:
-    1. "firstParty" -> "xirstParty" in function def (no provider matches, all pass through)
-    2. "if(!FN())"  -> "if(!0&&!1)"  at call site (condition always false, skip the block)
+    1. "firstParty" -> "xirstParty" in function def (neutralize provider gate)
+    2. "if(!FN())"  -> "if(!0&&!1)"  at call site (condition always false, guard skipped)
 
   Then re-sign the Mach-O binary (required on Apple Silicon).
 
@@ -55,7 +57,8 @@ def discover_patches(data):
     """Auto-detect minified isBuddyLive function name and build patches.
 
     Multiple functions gate on "firstParty", so we disambiguate isBuddyLive by
-    its unique date check: getFullYear()>2026 (the feature launch gate).
+    its unique date check: getFullYear()>2026 (the feature gate that is broken
+    in v2.1.90).
     """
     ID = rb'[a-zA-Z_$][a-zA-Z0-9_$]{0,5}'
     # Match the full isBuddyLive body up through the date check to uniquely identify it
@@ -93,7 +96,7 @@ def discover_patches(data):
         # FN is too short for a same-length replacement; skip call-site patch
         return [
             (
-                f'isBuddyLive() provider gate: "firstParty" -> "xirstParty" [auto: {fn_name_str}]',
+                f'isBuddyLive() provider gate: neutralize "firstParty" check [auto: {fn_name_str}]',
                 gate_old,
                 gate_new,
             )
@@ -104,12 +107,12 @@ def discover_patches(data):
 
     return [
         (
-            f'isBuddyLive() provider gate: "firstParty" -> "xirstParty" [auto: {fn_name_str}]',
+            f'isBuddyLive() provider gate: neutralize "firstParty" check [auto: {fn_name_str}]',
             gate_old,
             gate_new,
         ),
         (
-            f"call site: if(!{fn_name_str}()) -> if(!0&&!1) [auto]",
+            f"call site: if(!{fn_name_str}()) -> if(!0&&!1) — condition always false, guard skipped [auto]",
             call_old,
             call_new,
         ),

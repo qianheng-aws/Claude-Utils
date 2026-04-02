@@ -7,9 +7,9 @@
   <img src="https://img.shields.io/badge/Linux-x86__64-FCC624.svg?logo=linux&logoColor=black" alt="Linux x86_64">
 </p>
 
-> Unlock the `/buddy` companion pet in Claude Code for **any provider** — Bedrock, Vertex, and beyond.
+> Fix `/buddy` broken in Claude Code **v2.1.90** — the companion pet is unavailable for all users, not just specific providers.
 >
-> 为**任意 Provider**（Bedrock、Vertex 等）解锁 Claude Code 的 `/buddy` 伴生宠物功能。
+> 修复 Claude Code **v2.1.90** 中 `/buddy` 功能失效的问题 —— 该版本下所有用户均无法使用伴生宠物，而非仅限特定 Provider。
 
 ---
 
@@ -39,7 +39,7 @@ Claude Code v2.1.x ships with a hidden companion pet system. Run `/buddy` and yo
 - Reacts to events — errors, large diffs, test failures pop speech bubbles
 - Responds when you mention its name in conversation
 
-But it's locked behind a provider check. Everyone outside `firstParty` gets:
+In v2.1.90, the `isBuddyLive()` function is broken — it returns `false` for **all** users, so everyone sees:
 
 ```
 buddy is unavailable on this configuration
@@ -56,7 +56,7 @@ Claude Code v2.1.x 内置了一个隐藏的伴生宠物系统。运行 `/buddy` 
 - 事件反应 —— 报错、大段 diff、测试失败时弹出对话气泡
 - 在对话中提到它的名字时会回应
 
-但该功能被 Provider 检查锁定，非 `firstParty` 用户会看到：
+在 v2.1.90 中，`isBuddyLive()` 函数存在问题 —— 对**所有**用户都返回 `false`，因此所有人都会看到：
 
 ```
 buddy is unavailable on this configuration
@@ -70,15 +70,15 @@ buddy is unavailable on this configuration
 
 ## How it works / 工作原理
 
-The compiled binary contains `isBuddyLive()`, which gates the feature:
+The compiled binary contains `isBuddyLive()`, which gates the feature. In v2.1.90 this function returns `false` for all users:
 
-编译后的二进制文件中包含 `isBuddyLive()` 函数，用于控制功能开关：
+编译后的二进制文件中包含 `isBuddyLive()` 函数，用于控制功能开关。在 v2.1.90 中该函数对所有用户均返回 `false`：
 
 ```js
 function isBuddyLive() {
-  if (getProvider() !== "firstParty") return false;  // <-- patched out / 被补丁移除
+  if (getProvider() !== "firstParty") return false;
   if (isSimpleMode()) return false;
-  return date >= April 2026;
+  return date >= April 2026;  // <-- broken in v2.1.90 / 在 v2.1.90 中失效
 }
 ```
 
@@ -86,7 +86,7 @@ The script applies two same-length byte patches / 脚本应用两个等长字节
 
 | Patch / 补丁 | Before / 替换前 | After / 替换后 | Effect / 效果 |
 |-------|--------|-------|--------|
-| Function def / 函数定义 | `"firstParty"` | `"xirstParty"` | No provider matches, all pass through / 没有 Provider 能匹配，全部放行 |
+| Function def / 函数定义 | `"firstParty"` | `"xirstParty"` | Neutralize provider gate / 消除 Provider 门控 |
 | Call site / 调用处 | `if(!FN())` | `if(!0&&!1)` | Condition always false, guard skipped / 条件恒为 false，跳过守卫 |
 
 > [!NOTE]
