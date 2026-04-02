@@ -70,33 +70,21 @@ buddy is unavailable on this configuration
 
 ## How it works / 工作原理
 
-The compiled binary contains `isBuddyLive()`, which gates the feature. In v2.1.90 this function returns `false` for all users:
+<table>
+<tr><td><b>English</b></td><td><b>中文</b></td></tr>
+<tr>
+<td>
 
-编译后的二进制文件中包含 `isBuddyLive()` 函数，用于控制功能开关。在 v2.1.90 中该函数对所有用户均返回 `false`：
+The script auto-detects the minified gate function by its unique structure (regex-based, no hardcoded names), then applies two same-length byte patches so the broken check is bypassed — condition always false, guard skipped. On macOS ARM64 the binary is re-signed with an ad-hoc signature (required by the kernel).
 
-```js
-function isBuddyLive() {
-  if (getProvider() !== "firstParty") return false;
-  if (isSimpleMode()) return false;
-  return date >= April 2026;  // <-- broken in v2.1.90 / 在 v2.1.90 中失效
-}
-```
+</td>
+<td>
 
-The script applies two same-length byte patches / 脚本应用两个等长字节替换：
+脚本通过正则匹配自动定位混淆后的门控函数（无需硬编码函数名），然后应用两个等长字节补丁绕过失效的检查 —— 条件恒为 false，跳过守卫。在 macOS ARM64 上会重新进行 ad-hoc 签名（内核要求）。
 
-| Patch / 补丁 | Before / 替换前 | After / 替换后 | Effect / 效果 |
-|-------|--------|-------|--------|
-| Function def / 函数定义 | `"firstParty"` | `"xirstParty"` | Neutralize provider gate / 消除 Provider 门控 |
-| Call site / 调用处 | `if(!FN())` | `if(!0&&!1)` | Condition always false, guard skipped / 条件恒为 false，跳过守卫 |
-
-> [!NOTE]
-> **Auto-detection / 自动检测**: The script locates the minified function name by matching the unique structure of `isBuddyLive` (its `getFullYear()>2026` date check distinguishes it from other `firstParty` gates). No hardcoded names to update when the minifier shuffles identifiers.
->
-> 脚本通过匹配 `isBuddyLive` 的独特结构（`getFullYear()>2026` 日期检查）自动定位混淆后的函数名，与其他 `firstParty` 守卫区分开来。混淆器重新分配标识符时无需手动更新。
-
-On macOS ARM64, the binary is re-signed with an ad-hoc signature (required by the kernel).
-
-在 macOS ARM64 上，补丁后会重新进行 ad-hoc 签名（内核要求）。
+</td>
+</tr>
+</table>
 
 ## Usage / 使用方法
 
