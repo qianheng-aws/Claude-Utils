@@ -1,75 +1,131 @@
 # buddy-patch
 
-Enable the `/buddy` companion pet feature on Claude Code with non-firstParty providers (Bedrock, Vertex, etc.).
+<p align="center">
+  <img src="https://img.shields.io/badge/status-working-brightgreen.svg" alt="Status: Working">
+  <img src="https://img.shields.io/badge/python-3.6+-3776AB.svg?logo=python&logoColor=white" alt="Python 3.6+">
+  <img src="https://img.shields.io/badge/macOS-ARM64-000000.svg?logo=apple&logoColor=white" alt="macOS ARM64">
+  <img src="https://img.shields.io/badge/Linux-x86__64-FCC624.svg?logo=linux&logoColor=black" alt="Linux x86_64">
+</p>
 
-## Background
+> Unlock the `/buddy` companion pet in Claude Code for **any provider** — Bedrock, Vertex, and beyond.
+>
+> 为**任意 Provider**（Bedrock、Vertex 等）解锁 Claude Code 的 `/buddy` 伴生宠物功能。
 
-Claude Code v2.1.x includes a built-in companion pet system (`/buddy`) that lets you hatch an ASCII-art coding companion. The companion sits beside your input, animates, and reacts to your conversation with speech bubbles.
+---
 
-However, the feature is gated by a provider check — only `firstParty` (direct Anthropic API) users can access it. Users on AWS Bedrock, Google Vertex, or other providers see:
+<p align="center">
+  <img src="./resources/buddy-idle.png" width="200" alt="Wild CAPYBARA appeared!">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="./resources/buddy-stats.png" width="280" alt="Gotcha! CAPYBARA was caught!">
+</p>
+
+<p align="center">
+  <i>Wild CAPYBARA appeared! &nbsp;···&nbsp; Gotcha! CAPYBARA was caught!</i><br/>
+  <i>野生的卡皮巴拉出现了！ &nbsp;···&nbsp; 抓到了！卡皮巴拉被收服了！</i>
+</p>
+
+---
+
+## What is `/buddy`? / 什么是 `/buddy`？
+
+<table>
+<tr><td><b>English</b></td><td><b>中文</b></td></tr>
+<tr>
+<td>
+
+Claude Code v2.1.x ships with a hidden companion pet system. Run `/buddy` and you'll hatch an ASCII-art creature that lives beside your input box:
+
+- Idle animations — fidgets, blinks, breathes
+- Reacts to events — errors, large diffs, test failures pop speech bubbles
+- Responds when you mention its name in conversation
+
+But it's locked behind a provider check. Everyone outside `firstParty` gets:
 
 ```
 buddy is unavailable on this configuration
 ```
 
-This script patches the compiled binary to bypass the provider check while preserving all other guards (date check, simple-mode check).
+This script fixes that.
 
-## How it works
+</td>
+<td>
 
-The Claude Code binary (Bun-compiled Mach-O) contains two guards:
+Claude Code v2.1.x 内置了一个隐藏的伴生宠物系统。运行 `/buddy` 即可孵化一个住在输入框旁的 ASCII 小生物：
+
+- 待机动画 —— 扭动、眨眼、呼吸
+- 事件反应 —— 报错、大段 diff、测试失败时弹出对话气泡
+- 在对话中提到它的名字时会回应
+
+但该功能被 Provider 检查锁定，非 `firstParty` 用户会看到：
+
+```
+buddy is unavailable on this configuration
+```
+
+本脚本解决这个问题。
+
+</td>
+</tr>
+</table>
+
+## How it works / 工作原理
+
+The compiled binary contains `isBuddyLive()`, which gates the feature:
+
+编译后的二进制文件中包含 `isBuddyLive()` 函数，用于控制功能开关：
 
 ```js
-// Guard 1: isBuddyLive() function definition
 function isBuddyLive() {
-  if (getProvider() !== "firstParty") return false;  // ← patched out
+  if (getProvider() !== "firstParty") return false;  // <-- patched out / 被补丁移除
   if (isSimpleMode()) return false;
   return date >= April 2026;
 }
-
-// Guard 2: /buddy command handler
-if (!isBuddyLive()) {
-  return "buddy is unavailable on this configuration";  // ← patched out
-}
 ```
 
-The script applies two same-length byte replacements:
+The script applies two same-length byte patches / 脚本应用两个等长字节替换：
 
-| Location | Before | After | Effect |
-|----------|--------|-------|--------|
-| Function def | `"firstParty"` | `"xirstParty"` | No provider matches → all pass through to date check |
-| Call site | `if(!Qn_())` | `if(!0&&!1)` | Condition is always `false` → block never entered |
+| Patch / 补丁 | Before / 替换前 | After / 替换后 | Effect / 效果 |
+|-------|--------|-------|--------|
+| Function def / 函数定义 | `"firstParty"` | `"xirstParty"` | No provider matches, all pass through / 没有 Provider 能匹配，全部放行 |
+| Call site / 调用处 | `if(!FN())` | `if(!0&&!1)` | Condition always false, guard skipped / 条件恒为 false，跳过守卫 |
+
+> [!NOTE]
+> **Auto-detection / 自动检测**: The script locates the minified function name by matching the unique structure of `isBuddyLive` (its `getFullYear()>2026` date check distinguishes it from other `firstParty` gates). No hardcoded names to update when the minifier shuffles identifiers.
+>
+> 脚本通过匹配 `isBuddyLive` 的独特结构（`getFullYear()>2026` 日期检查）自动定位混淆后的函数名，与其他 `firstParty` 守卫区分开来。混淆器重新分配标识符时无需手动更新。
 
 On macOS ARM64, the binary is re-signed with an ad-hoc signature (required by the kernel).
 
-## Usage
+在 macOS ARM64 上，补丁后会重新进行 ad-hoc 签名（内核要求）。
+
+## Usage / 使用方法
 
 ```bash
-# Auto-detect latest Claude binary
+# Auto-detect latest Claude binary / 自动检测最新的 Claude 二进制文件
 python3 patch-buddy.py
 
-# Or specify path explicitly
+# Or specify path explicitly / 或手动指定路径
 python3 patch-buddy.py ~/.local/share/claude/versions/2.1.90
 ```
 
 After patching, restart Claude Code and run `/buddy` to hatch your companion.
 
-## /buddy commands
+补丁完成后，重启 Claude Code 并运行 `/buddy` 来孵化你的宠物。
 
-| Command | Description |
+## `/buddy` commands / `/buddy` 命令
+
+| Command / 命令 | Description / 说明 |
 |---------|-------------|
-| `/buddy` | Hatch (first time) or view your companion's stats card |
-| `/buddy pet` | Pet your companion (triggers heart animation) |
-| `/buddy off` | Mute the companion |
-| `/buddy on` | Unmute the companion |
+| `/buddy` | Hatch (first time) or view stats card / 孵化（首次）或查看状态卡 |
+| `/buddy pet` | Pet your companion / 抚摸你的宠物 |
+| `/buddy off` | Mute the companion / 静音宠物 |
+| `/buddy on` | Unmute the companion / 取消静音 |
 
-Your companion also:
-- Animates with idle/fidget/blink cycles beside the input box
-- Reacts to errors, large diffs, and test failures via speech bubbles
-- Responds when you mention its name in conversation
+## After Claude Code updates / Claude Code 更新后
 
-## After Claude Code updates
+Updates overwrite the binary — re-run the script. Automate with a session hook:
 
-Updates overwrite the binary — re-run the script after each update. You can automate this with a session hook:
+更新会覆盖二进制文件 —— 需重新运行脚本。可通过 hook 自动化：
 
 ```json
 // ~/.claude/settings.json
@@ -82,17 +138,22 @@ Updates overwrite the binary — re-run the script after each update. You can au
 }
 ```
 
-The script is idempotent — it exits immediately if already patched.
+The script is idempotent — exits immediately if already patched.
 
-## Compatibility
+脚本是幂等的 —— 已补丁时会立即退出。
 
-- **Tested on**: Claude Code v2.1.90, macOS ARM64 (Apple Silicon)
-- **Requires**: Python 3.6+, `codesign` (macOS only, for re-signing)
-- **Risk**: Minified function names (`Qn_`, `Jq`) may change across versions. If the script reports "pattern not found", the names need updating. See the script comments for how to locate them.
+## Compatibility / 兼容性
 
-## Restoring
+| | |
+|---|---|
+| **Tested on / 已测试** | Claude Code v2.1.90 — macOS ARM64 & Linux x86-64 |
+| **Requires / 依赖** | Python 3.6+, `codesign` (macOS only) |
+| **Version resilience / 版本适应性** | Minified names auto-detected via regex. Fails cleanly if function *structure* changes. / 混淆名称通过正则自动检测。仅在函数*结构*变化时才会失败。 |
+
+## Restoring / 还原
+
+The script creates a `.bak` before patching / 脚本在补丁前会创建 `.bak` 备份：
 
 ```bash
-# Restore from backup
 cp ~/.local/share/claude/versions/2.1.90.bak ~/.local/share/claude/versions/2.1.90
 ```
